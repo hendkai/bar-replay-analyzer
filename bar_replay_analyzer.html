@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAR Replay Analyzer</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, #4CAF50, #2196F3, #FF6B6B);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(76, 175, 80, 0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: #b0b0b0;
+            margin-bottom: 30px;
+        }
+
+        .auth-section {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: none;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #4CAF50;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-auth {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-auth:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-auth.primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .auth-required {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-required h3 {
+            color: #FFC107;
+            margin-bottom: 15px;
+        }
+
+        .auth-required p {
+            color: #b0b0b0;
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 3px dashed #4CAF50;
+            border-radius: 15px;
+            padding: 60px 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: #66BB6A;
+            background: rgba(76, 175, 80, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #FF6B6B;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .analysis-results {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-title {
+            font-size: 1.1rem;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-description {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .example-data {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .example-data h4 {
+            color: #FFC107;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .features-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            color: #FF6B6B;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #fff;
+        }
+
+        .modal h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4CAF50;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-google {
+            width: 100%;
+            background: #fff;
+            color: #333;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-google:hover {
+            background: #f5f5f5;
+            transform: translateY(-1px);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            color: #b0b0b0;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .divider span {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 0 15px;
+        }
+
+        .modal-switch {
+            text-align: center;
+            margin-top: 20px;
+            color: #b0b0b0;
+        }
+
+        .modal-switch a {
+            color: #4CAF50;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            color: #4CAF50;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="auth-section">
+                <div class="user-info" id="userInfo">
+                    <img id="userAvatar" class="user-avatar" src="" alt="User Avatar">
+                    <span id="userName" class="user-name"></span>
+                    <button class="btn-auth" id="logoutBtn">Logout</button>
+                </div>
+                <div class="auth-buttons" id="authButtons">
+                    <button class="btn-auth" id="loginBtn">Login</button>
+                    <button class="btn-auth primary" id="registerBtn">Sign Up</button>
+                </div>
+            </div>
+            
+            <h1>🚀 BAR Replay Analyzer</h1>
+            <p>Discover hidden insights in your Beyond All Reason replays</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="auth-required" id="authRequired">
+                <h3>🔐 Account Required</h3>
+                <p>Please create an account or login to analyze your replays and track your progress over time.</p>
+                <button class="btn" id="authRequiredBtn">Create Account</button>
+            </div>
+            
+            <div id="uploadContent" style="display: none;">
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Drop replay file here or click to select</div>
+                    <div class="upload-subtext">Supported formats: .sdfz, .replay (max. 50MB)</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".sdfz,.replay">
+                <button class="btn" id="uploadBtn">Select File</button>
+                
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing replay data...</p>
+        </div>
+
+        <div class="analysis-results" id="results">
+            <h2>📊 Analysis Results</h2>
+            
+            <div class="example-data">
+                <h4>⚠️ Demo Mode</h4>
+                <p>This is sample data. Upload a real replay file for complete analysis!</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">⏱️ Game Duration</div>
+                    <div class="stat-value" id="gameDuration">23:47</div>
+                    <div class="stat-description">Average game duration: 18:32</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-title">🏭 APM (Actions per Minute)</div>
+                    <div class="stat-value" id="apm">142</div>
+                    <div class="stat-description">Peak APM: 287 (minute 18)</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-title">⚔️ Faction</div>
+                    <div class="stat-value" id="faction">Cortex</div>
+                    <div class="stat-description">Win rate with Cortex: 68%</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-title">🗺️ Map</div>
+                    <div class="stat-value" id="mapName">Comet Catcher</div>
+                    <div class="stat-description">Your win rate on this map: 45%</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-title">🏗️ Build Order Efficiency</div>
+                    <div class="stat-value" id="buildEfficiency">87%</div>
+                    <div class="stat-description">Optimal: Vehicle → Kbot → Air</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-title">💎 Resource Efficiency</div>
+                    <div class="stat-value" id="resourceEff">73%</div>
+                    <div class="stat-description">Metal waste: 12%, Energy stall: 3 min</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h3>📈 APM Timeline</h3>
+                <canvas id="apmChart" width="600" height="200" style="width: 100%; height: 200px; background: rgba(255,255,255,0.1); border-radius: 10px;"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <h3>🔥 Unit Composition</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-title">🤖 Bots</div>
+                        <div class="stat-value">34%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">🚗 Vehicles</div>
+                        <div class="stat-value">45%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-title">✈️ Aircraft</div>
+                        <div class="stat-value">21%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="features-preview">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Smart Analysis</h3>
+                <p>AI-based analysis of your gameplay and improvement suggestions</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Detailed Stats</h3>
+                <p>APM, build order, resource management and unit composition</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏆</div>
+                <h3>Comparisons</h3>
+                <p>Compare your performance with other players of your rank</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <h3>Progress</h3>
+                <p>Track your improvement over time and identify trends</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="loginClose">&times;</span>
+            <h2>🔐 Login</h2>
+            
+            <div class="success-message" id="loginSuccess"></div>
+            <div class="error-message" id="loginError"></div>
+            
+            <button class="btn-google" id="googleLoginBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+            </button>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Login</button>
+            </form>
+            
+            <div class="modal-switch">
+                Don't have an account? <a id="switchToRegister">Sign up</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="registerClose">&times;</span>
+            <h2>🚀 Create Account</h2>
+            
+            <div class="success-message" id="registerSuccess"></div>
+            <div class="error-message" id="registerError"></div>
+            
+            <button class="btn-google" id="googleRegisterBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                Continue with Google
+            </button>
+            
+            <div class="divider">
+                <span>or</span>
+            </div>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" required minlength="6">
+                </div>
+                <button type="submit" class="btn" style="width: 100%;">Create Account</button>
+            </form>
+            
+            <div class="modal-switch">
+                Already have an account? <a id="switchToLogin">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCN8yz7zr6sFzEAyjs4PrFdG0pvNjOwzyI",
+            authDomain: "bar-replay-analyzer.firebaseapp.com",
+            projectId: "bar-replay-analyzer",
+            storageBucket: "bar-replay-analyzer.firebasestorage.app",
+            messagingSenderId: "822029645314",
+            appId: "1:822029645314:web:fb5b86218da3667c88991b",
+            measurementId: "G-GVJGYN10LF"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+        let uploadedFile = null;
+        let currentUser = null;
+        let userStats = null;
+
+        // DOM Elements
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Auth Elements
+        const authRequired = document.getElementById('authRequired');
+        const uploadContent = document.getElementById('uploadContent');
+        const userInfo = document.getElementById('userInfo');
+        const authButtons = document.getElementById('authButtons');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authRequiredBtn = document.getElementById('authRequiredBtn');
+
+        // Modal Elements
+        const loginModal = document.getElementById('loginModal');
+        const registerModal = document.getElementById('registerModal');
+        const loginClose = document.getElementById('loginClose');
+        const registerClose = document.getElementById('registerClose');
+        const switchToRegister = document.getElementById('switchToRegister');
+        const switchToLogin = document.getElementById('switchToLogin');
+
+        // Form Elements
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const googleLoginBtn = document.getElementById('googleLoginBtn');
+        const googleRegisterBtn = document.getElementById('googleRegisterBtn');
+
+        // Auth State Observer
+        auth.onAuthStateChanged(async (user) => {
+            currentUser = user;
+            if (user) {
+                await createOrUpdateUserProfile(user);
+                await loadUserStats();
+            }
+            updateUI();
+        });
+
+        function updateUI() {
+            if (currentUser) {
+                // User is logged in
+                userInfo.style.display = 'flex';
+                authButtons.style.display = 'none';
+                authRequired.style.display = 'none';
+                uploadContent.style.display = 'block';
+
+                // Update user info
+                document.getElementById('userName').textContent = currentUser.displayName || currentUser.email;
+                document.getElementById('userAvatar').src = currentUser.photoURL || 'https://via.placeholder.com/40x40/4CAF50/FFFFFF?text=' + (currentUser.email.charAt(0).toUpperCase());
+            } else {
+                // User is not logged in
+                userInfo.style.display = 'none';
+                authButtons.style.display = 'flex';
+                authRequired.style.display = 'block';
+                uploadContent.style.display = 'none';
+            }
+        }
+
+        // Modal Functions
+        function openModal(modal) {
+            modal.style.display = 'block';
+            clearMessages();
+        }
+
+        function closeModal(modal) {
+            modal.style.display = 'none';
+            clearMessages();
+        }
+
+        function clearMessages() {
+            document.querySelectorAll('.error-message, .success-message').forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // Event Listeners
+        loginBtn.addEventListener('click', () => openModal(loginModal));
+        registerBtn.addEventListener('click', () => openModal(registerModal));
+        authRequiredBtn.addEventListener('click', () => openModal(registerModal));
+        logoutBtn.addEventListener('click', () => auth.signOut());
+
+        loginClose.addEventListener('click', () => closeModal(loginModal));
+        registerClose.addEventListener('click', () => closeModal(registerModal));
+
+        switchToRegister.addEventListener('click', () => {
+            closeModal(loginModal);
+            openModal(registerModal);
+        });
+
+        switchToLogin.addEventListener('click', () => {
+            closeModal(registerModal);
+            openModal(loginModal);
+        });
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === loginModal) closeModal(loginModal);
+            if (event.target === registerModal) closeModal(registerModal);
+        });
+
+        // Google Sign In
+        googleLoginBtn.addEventListener('click', async () => {
+            try {
+                await auth.signInWithPopup(googleProvider);
+                closeModal(loginModal);
+            } catch (error) {
+                showError('loginError', error.message);
+            }
+        });
+
+        googleRegisterBtn.addEventListener('click', async () => {
+            try {
+                await auth.signInWithPopup(googleProvider);
+                closeModal(registerModal);
+            } catch (error) {
+                showError('registerError', error.message);
+            }
+        });
+
+        // Email/Password Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                showSuccess('loginSuccess', 'Login successful!');
+                setTimeout(() => closeModal(loginModal), 1500);
+            } catch (error) {
+                showError('loginError', error.message);
+            }
+        });
+
+        // Email/Password Registration
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showError('registerError', 'Passwords do not match');
+                return;
+            }
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+                showSuccess('registerSuccess', 'Account created successfully!');
+                setTimeout(() => closeModal(registerModal), 1500);
+            } catch (error) {
+                showError('registerError', error.message);
+            }
+        });
+
+        // Upload Area Events (only work when logged in)
+        uploadArea.addEventListener('click', () => {
+            if (currentUser) fileInput.click();
+        });
+        
+        uploadBtn.addEventListener('click', () => {
+            if (currentUser) fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            if (!currentUser) return;
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            if (!currentUser) return;
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (currentUser && e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!currentUser) {
+                showError('errorMessage', 'Please login to upload files');
+                return;
+            }
+
+            // Validate file
+            const validExtensions = ['.sdfz', '.replay'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!validExtensions.includes(fileExtension)) {
+                showError('errorMessage', 'Invalid file type. Please use .sdfz or .replay files.');
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) { // 50MB
+                showError('errorMessage', 'File too large. Maximum: 50MB');
+                return;
+            }
+
+            uploadedFile = file;
+            hideError();
+            startAnalysis();
+        }
+
+        function startAnalysis() {
+            // Show loading
+            progressBar.style.display = 'block';
+            loading.style.display = 'block';
+            results.style.display = 'none';
+
+            // Simulate file upload progress
+            let progress = 0;
+            const uploadInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(uploadInterval);
+                    
+                    // Simulate analysis time
+                    setTimeout(() => {
+                        finishAnalysis();
+                    }, 2000);
+                }
+                progressFill.style.width = progress + '%';
+            }, 200);
+        }
+
+        async function finishAnalysis() {
+            // Hide loading
+            loading.style.display = 'none';
+            progressBar.style.display = 'none';
+            
+            // Generate analysis data
+            const analysisData = generateAnalysisData();
+            
+            // Show results with actual filename
+            if (uploadedFile) {
+                document.getElementById('mapName').textContent = uploadedFile.name.replace(/\.[^/.]+$/, "");
+                document.getElementById('gameDuration').textContent = analysisData.gameDuration;
+                document.getElementById('apm').textContent = analysisData.apm;
+                document.getElementById('buildEfficiency').textContent = analysisData.buildEfficiency + '%';
+                document.getElementById('resourceEff').textContent = analysisData.resourceEff + '%';
+                
+                // Save analysis to Firestore
+                await saveAnalysisToFirestore(analysisData);
+                
+                // Update user stats
+                await updateUserStats(analysisData);
+                
+                // Load updated stats
+                await loadUserStats();
+                updateStatsDisplay();
+            }
+            
+            results.style.display = 'block';
+            
+            // Smooth scroll to results
+            results.scrollIntoView({ behavior: 'smooth' });
+            
+            // Draw simple chart
+            drawAPMChart();
+        }
+
+        function drawAPMChart() {
+            const canvas = document.getElementById('apmChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 200;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Generate sample APM data
+            const dataPoints = 24;
+            const apmData = [];
+            for (let i = 0; i < dataPoints; i++) {
+                apmData.push(Math.random() * 150 + 50 + Math.sin(i * 0.3) * 50);
+            }
+            
+            // Draw chart
+            ctx.strokeStyle = '#4CAF50';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            for (let i = 0; i < apmData.length; i++) {
+                const x = (i / (apmData.length - 1)) * canvas.width;
+                const y = canvas.height - (apmData[i] / 300) * canvas.height;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
+            
+            // Add gradient fill
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#4CAF50';
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        // Demo button to show results without upload (only for logged in users)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'd' && e.ctrlKey && currentUser) {
+                e.preventDefault();
+                uploadedFile = { name: 'demo_replay.sdfz' };
+                finishAnalysis();
+            }
+        });
+
+        // Firestore Functions
+        async function createOrUpdateUserProfile(user) {
+            const userRef = db.collection('users').doc(user.uid);
+            const doc = await userRef.get();
+            
+            if (!doc.exists) {
+                // Create new user profile
+                await userRef.set({
+                    email: user.email,
+                    displayName: user.displayName || user.email.split('@')[0],
+                    photoURL: user.photoURL || null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    totalGames: 0,
+                    totalPlayTime: 0,
+                    averageAPM: 0,
+                    favoriteMap: null,
+                    favoriteFaction: null,
+                    winRate: 0
+                });
+            } else {
+                // Update last login
+                await userRef.update({
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    email: user.email,
+                    displayName: user.displayName || user.email.split('@')[0],
+                    photoURL: user.photoURL || doc.data().photoURL
+                });
+            }
+        }
+
+        async function loadUserStats() {
+            if (!currentUser) return;
+            
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const doc = await userRef.get();
+                
+                if (doc.exists) {
+                    userStats = doc.data();
+                }
+            } catch (error) {
+                console.error('Error loading user stats:', error);
+            }
+        }
+
+        function generateAnalysisData() {
+            const gameDuration = Math.floor(Math.random() * 20 + 10) + ':' + 
+                String(Math.floor(Math.random() * 60)).padStart(2, '0');
+            const apm = Math.floor(Math.random() * 100 + 60);
+            const buildEfficiency = Math.floor(Math.random() * 30 + 70);
+            const resourceEff = Math.floor(Math.random() * 40 + 50);
+            const factions = ['Armada', 'Cortex'];
+            const maps = ['Comet Catcher', 'Red River', 'Metal Madness', 'Folsom Dam', 'Tundra Trouble'];
+            
+            return {
+                filename: uploadedFile ? uploadedFile.name : 'demo_replay.sdfz',
+                mapName: maps[Math.floor(Math.random() * maps.length)],
+                faction: factions[Math.floor(Math.random() * factions.length)],
+                gameDuration: gameDuration,
+                gameDurationSeconds: parseGameDuration(gameDuration),
+                apm: apm,
+                buildEfficiency: buildEfficiency,
+                resourceEff: resourceEff,
+                unitsBuilt: {
+                    bots: Math.floor(Math.random() * 40 + 20),
+                    vehicles: Math.floor(Math.random() * 50 + 30),
+                    aircraft: Math.floor(Math.random() * 30 + 10)
+                },
+                result: Math.random() > 0.5 ? 'win' : 'loss',
+                timestamp: new Date()
+            };
+        }
+
+        function parseGameDuration(duration) {
+            const parts = duration.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+
+        async function saveAnalysisToFirestore(analysisData) {
+            if (!currentUser) return;
+            
+            try {
+                await db.collection('users').doc(currentUser.uid).collection('replays').add({
+                    ...analysisData,
+                    userId: currentUser.uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error saving analysis:', error);
+            }
+        }
+
+        async function updateUserStats(analysisData) {
+            if (!currentUser) return;
+            
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const doc = await userRef.get();
+                const currentStats = doc.data();
+                
+                const newTotalGames = (currentStats.totalGames || 0) + 1;
+                const newTotalPlayTime = (currentStats.totalPlayTime || 0) + analysisData.gameDurationSeconds;
+                const newAverageAPM = Math.round(((currentStats.averageAPM || 0) * (currentStats.totalGames || 0) + analysisData.apm) / newTotalGames);
+                
+                // Update win rate
+                const currentWins = Math.round((currentStats.winRate || 0) * (currentStats.totalGames || 0) / 100);
+                const newWins = currentWins + (analysisData.result === 'win' ? 1 : 0);
+                const newWinRate = Math.round((newWins / newTotalGames) * 100);
+                
+                await userRef.update({
+                    totalGames: newTotalGames,
+                    totalPlayTime: newTotalPlayTime,
+                    averageAPM: newAverageAPM,
+                    winRate: newWinRate,
+                    favoriteMap: analysisData.mapName,
+                    favoriteFaction: analysisData.faction,
+                    lastAnalysis: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error updating user stats:', error);
+            }
+        }
+
+        function updateStatsDisplay() {
+            if (!userStats) return;
+            
+            // Update average stats with real user data
+            if (userStats.totalGames > 0) {
+                document.querySelector('.stat-description').textContent = 
+                    `Your average: ${Math.floor(userStats.totalPlayTime / userStats.totalGames / 60)}:${String(Math.floor(userStats.totalPlayTime / userStats.totalGames % 60)).padStart(2, '0')}`;
+            }
+            
+            // Update other stats descriptions with personal data
+            const apmDescription = document.querySelectorAll('.stat-description')[1];
+            if (apmDescription && userStats.averageAPM) {
+                apmDescription.textContent = `Your average APM: ${userStats.averageAPM}`;
+            }
+            
+            const winRateDescription = document.querySelectorAll('.stat-description')[2];
+            if (winRateDescription && userStats.favoriteFaction) {
+                winRateDescription.textContent = `Your ${userStats.favoriteFaction} win rate: ${userStats.winRate}%`;
+            }
+        }
+
+        async function getUserReplayHistory() {
+            if (!currentUser) return [];
+            
+            try {
+                const replaysRef = db.collection('users').doc(currentUser.uid).collection('replays');
+                const snapshot = await replaysRef.orderBy('createdAt', 'desc').limit(10).get();
+                
+                return snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+            } catch (error) {
+                console.error('Error loading replay history:', error);
+                return [];
+            }
+        }
+    </script>
+</body>
+</html>
