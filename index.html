@@ -513,9 +513,9 @@
                 <div class="upload-area" id="uploadArea">
                     <div class="upload-icon">📁</div>
                     <div class="upload-text">Drop replay file here or click to select</div>
-                    <div class="upload-subtext">Supported formats: .sdfz, .replay (max. 50MB)</div>
+                    <div class="upload-subtext">Supported format: .sdfz (max. 50MB)</div>
                 </div>
-                <input type="file" id="fileInput" class="file-input" accept=".sdfz,.replay">
+                <input type="file" id="fileInput" class="file-input" accept=".sdfz">
                 <button class="btn" id="uploadBtn">Select File</button>
                 
                 <div class="progress-bar" id="progressBar">
@@ -949,11 +949,11 @@
             }
 
             // Validate file
-            const validExtensions = ['.sdfz', '.replay'];
+            const validExtensions = ['.sdfz'];
             const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
             
             if (!validExtensions.includes(fileExtension)) {
-                showError('errorMessage', 'Invalid file type. Please use .sdfz or .replay files.');
+                showError('errorMessage', 'Invalid file type. Please use .sdfz files.');
                 return;
             }
 
@@ -1000,6 +1000,14 @@
             
             // Show results with actual filename
             if (uploadedFile) {
+                // Hide demo mode banner if a real file was uploaded
+                const exampleData = document.querySelector('.example-data');
+                if (uploadedFile.name !== 'demo_replay.sdfz') {
+                    exampleData.style.display = 'none';
+                } else {
+                    exampleData.style.display = 'block';
+                }
+                
                 document.getElementById('mapName').textContent = uploadedFile.name.replace(/\.[^/.]+$/, "");
                 document.getElementById('gameDuration').textContent = analysisData.gameDuration;
                 document.getElementById('apm').textContent = analysisData.apm;
