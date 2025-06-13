@@ -71,12 +71,12 @@
    - Create a new Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
    - Enable **Authentication** → **Email/Password** and **Google** sign-in
    - Enable **Firestore Database** in test mode
-   - Copy your Firebase config and replace it in `bar_replay_analyzer.html` (line 318-325)
+   - Copy your Firebase config and replace it in `index.html` (line 318-325)
 
 3. **Open the app**
    ```bash
    # Option 1: Direct file access
-   open bar_replay_analyzer.html
+   open index.html
    
    # Option 2: Local server (recommended)
    python -m http.server 8000
@@ -101,8 +101,9 @@ const firebaseConfig = {
 
 ```
 bar-replay-analyzer/
-├── bar_replay_analyzer.html    # Main application file
-├── README.md                   # Project documentation
+├── index.html                  # Main application file
+├── firestore.rules            # Firestore security rules
+├── README.md                  # Project documentation
 └── .gitignore                 # Git ignore rules
 ```
 
