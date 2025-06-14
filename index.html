@@ -152,7 +152,7 @@
 
     <script type="module">
         // Import the parser from a CDN that provides it as an ES module
-        import { DemoParser } from 'https://esm.sh/sdfz-demo-parser';
+        import * as sdfz from 'https://cdn.jsdelivr.net/npm/sdfz-parser@0.2.0/dist/index.js';
 
         // --- Firebase Configuration ---
         const firebaseConfig = {
@@ -245,8 +245,11 @@
             results.style.display = 'none';
             document.querySelector('.example-data').style.display = 'none';
             try {
-                const parser = new DemoParser();
-                const demo = await parser.parseDemo(file);
+                // The new parser expects an ArrayBuffer
+                const fileBuffer = await file.arrayBuffer();
+                const parser = new sdfz.SDFZ(fileBuffer);
+                const demo = await parser.parse();
+
                 console.log("Replay parsed successfully:", demo);
                 const analysisData = extractDataFromDemo(demo);
                 await finishAnalysis(analysisData);
@@ -258,18 +261,23 @@
         }
 
         function extractDataFromDemo(demo) {
-            const gameInfo = demo.info.game;
-            const player = demo.info.players.find(p => p.name === currentUser.displayName) || demo.info.players[0] || {};
+            const gameInfo = demo.header.game;
+            const script = demo.header.script;
+            // Find the player in the script's teams array
+            const playerInfo = Object.values(script.teams).flatMap(team => Object.values(team.players)).find(p => p.name === currentUser.displayName);
+
+            const player = playerInfo || demo.header.players[0] || {};
             const gameDurationSeconds = Math.round(gameInfo.gameTime);
             const gameDuration = new Date(gameDurationSeconds * 1000).toISOString().substr(14, 5);
-            const faction = player.teamId === 0 ? 'Armada' : 'Cortex';
+            const faction = player.side === 'Arm' ? 'Armada' : 'Cortex'; // Logic from the other repo
+            
             return {
                 filename: uploadedFile.name,
                 mapName: gameInfo.mapName,
                 faction,
                 gameDuration,
                 gameDurationSeconds,
-                apm: player.apm || Math.floor(Math.random() * 50 + 80),
+                apm: player.effectiveApm || Math.floor(Math.random() * 50 + 80),
                 buildEfficiency: Math.floor(Math.random() * 30 + 70), // Placeholder
                 resourceEff: Math.floor(Math.random() * 40 + 50), // Placeholder
                 result: player.isSpectator ? 'spectator' : (gameInfo.winningTeams.includes(player.teamId) ? 'win' : 'loss'),
@@ -332,7 +340,33 @@
         async function createOrUpdateUserProfile(user) { const userRef = db.collection('users').doc(user.uid); const doc = await userRef.get(); const userData = { email: user.email, displayName: user.displayName || user.email.split('@')[0], photoURL: user.photoURL || null, lastLogin: firebase.firestore.FieldValue.serverTimestamp() }; if (!doc.exists) { await userRef.set({ ...userData, createdAt: firebase.firestore.FieldValue.serverTimestamp(), totalGames: 0, totalPlayTime: 0, averageAPM: 0, winRate: 0 }); } else { await userRef.update(userData); } }
         async function loadUserStats() { if (!currentUser) return; const userRef = db.collection('users').doc(currentUser.uid); const doc = await userRef.get(); if (doc.exists) userStats = doc.data(); }
         async function saveAnalysisToFirestore(analysisData) { if (!currentUser) return; await db.collection('users').doc(currentUser.uid).collection('replays').add({ ...analysisData, userId: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); }
-        async function updateUserStats(analysisData) { if (!currentUser || analysisData.result === 'spectator') return; const userRef = db.collection('users').doc(currentUser.uid); const currentStats = (await userRef.get()).data() || {}; const totalGames = (currentStats.totalGames || 0) + 1; const newTotalPlayTime = (currentStats.totalPlayTime || 0) + analysisData.gameDurationSeconds; const newAverageAPM = Math.round(((currentStats.averageAPM || 0) * (currentStats.totalGames || 0) + analysisData.apm) / totalGames); const currentWins = Math.round((currentStats.winRate || 0) * (currentStats.totalGames || 0) / 100); const newWins = currentWins + (analysisData.result === 'win' ? 1 : 0); const newWinRate = Math.round((newWins / totalGames) * 100); await userRef.update({ totalGames, totalPlayTime: newTotalPlayTime, averageAPM: newAverageAPM, winRate: newWinRate, lastAnalysis: firebase.firestore.FieldValue.serverTimestamp() }); }
+        async function updateUserStats(analysisData) { 
+            if (!currentUser || analysisData.result === 'spectator') return; 
+            const userRef = db.collection('users').doc(currentUser.uid);
+            
+            // Use a transaction to ensure atomic updates
+            await db.runTransaction(async (transaction) => {
+                const doc = await transaction.get(userRef);
+                if (!doc.exists) { return; }
+
+                const currentStats = doc.data() || {};
+                const totalGames = (currentStats.totalGames || 0) + 1;
+                const newTotalPlayTime = (currentStats.totalPlayTime || 0) + analysisData.gameDurationSeconds;
+                const newAverageAPM = Math.round(((currentStats.averageAPM || 0) * (currentStats.totalGames || 0) + analysisData.apm) / totalGames);
+                
+                const currentWins = Math.round((currentStats.winRate || 0) * (currentStats.totalGames || 0) / 100);
+                const newWins = currentWins + (analysisData.result === 'win' ? 1 : 0);
+                const newWinRate = Math.round((newWins / totalGames) * 100); 
+
+                transaction.update(userRef, { 
+                    totalGames, 
+                    totalPlayTime: newTotalPlayTime, 
+                    averageAPM: newAverageAPM, 
+                    winRate: newWinRate, 
+                    lastAnalysis: firebase.firestore.FieldValue.serverTimestamp() 
+                });
+            });
+        }
         function updateStatsDisplay() { if (!userStats) return; const avgDurationDesc = document.querySelectorAll('.stat-description')[0]; const avgApmDesc = document.querySelectorAll('.stat-description')[1]; const factionDesc = document.querySelectorAll('.stat-description')[2]; if (userStats.totalGames > 0) { const avgSeconds = Math.floor(userStats.totalPlayTime / userStats.totalGames); avgDurationDesc.textContent = `Your average: ${new Date(avgSeconds * 1000).toISOString().substr(14, 5)}`; avgApmDesc.textContent = `Your average APM: ${userStats.averageAPM}`; factionDesc.textContent = `Your win rate: ${userStats.winRate}%`; } }
     </script>
 </body>
