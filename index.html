@@ -200,61 +200,68 @@
         // Use multiple CDN sources as fallbacks
         let DemoParser;
         
-        // Show loading status
-        function showParserStatus(message) {
-            if (parserStatus && parserStatusText) {
-                parserStatus.style.display = 'block';
-                parserStatusText.textContent = message;
+        // Parser loading will be done after DOM is ready
+        async function loadParser() {
+            // Get DOM elements (they should be available by now)
+            const parserStatus = document.getElementById('parserStatus');
+            const parserStatusText = document.getElementById('parserStatusText');
+            
+            // Show loading status
+            function showParserStatus(message) {
+                if (parserStatus && parserStatusText) {
+                    parserStatus.style.display = 'block';
+                    parserStatusText.textContent = message;
+                }
             }
-        }
-        
-        function hideParserStatus() {
-            if (parserStatus) {
-                parserStatus.style.display = 'none';
+            
+            function hideParserStatus() {
+                if (parserStatus) {
+                    parserStatus.style.display = 'none';
+                }
             }
-        }
-        
-        showParserStatus("Loading replay parser...");
-        
-        try {
-            // Primary: Latest version with bundle=false to avoid minification issues
-            showParserStatus("Trying esm.sh (optimized)...");
-            const module1 = await import('https://esm.sh/sdfz-demo-parser@5.11.0?bundle=false');
-            DemoParser = module1.DemoParser;
-            console.log("Loaded parser from esm.sh (bundle=false)");
-            hideParserStatus();
-        } catch (e1) {
-            console.warn("Failed to load from esm.sh bundle=false, trying alternative:", e1.message);
+            
+            showParserStatus("Loading replay parser...");
+            
             try {
-                // Fallback 1: Try without bundle=false
-                showParserStatus("Trying esm.sh (default)...");
-                const module2 = await import('https://esm.sh/sdfz-demo-parser@5.11.0');
-                DemoParser = module2.DemoParser;
-                console.log("Loaded parser from esm.sh (default)");
+                // Primary: Latest version with bundle=false to avoid minification issues
+                showParserStatus("Trying esm.sh (optimized)...");
+                const module1 = await import('https://esm.sh/sdfz-demo-parser@5.11.0?bundle=false');
+                DemoParser = module1.DemoParser;
+                console.log("Loaded parser from esm.sh (bundle=false)");
                 hideParserStatus();
-            } catch (e2) {
-                console.warn("Failed to load from esm.sh default, trying jsdelivr:", e2.message);
+            } catch (e1) {
+                console.warn("Failed to load from esm.sh bundle=false, trying alternative:", e1.message);
                 try {
-                    // Fallback 2: Try jsdelivr CDN
-                    showParserStatus("Trying jsdelivr CDN...");
-                    const module3 = await import('https://cdn.jsdelivr.net/npm/sdfz-demo-parser@5.11.0/+esm');
-                    DemoParser = module3.DemoParser;
-                    console.log("Loaded parser from jsdelivr");
+                    // Fallback 1: Try without bundle=false
+                    showParserStatus("Trying esm.sh (default)...");
+                    const module2 = await import('https://esm.sh/sdfz-demo-parser@5.11.0');
+                    DemoParser = module2.DemoParser;
+                    console.log("Loaded parser from esm.sh (default)");
                     hideParserStatus();
-                } catch (e3) {
-                    console.warn("Failed to load from jsdelivr:", e3.message);
+                } catch (e2) {
+                    console.warn("Failed to load from esm.sh default, trying jsdelivr:", e2.message);
                     try {
-                        // Fallback 3: Try unpkg CDN
-                        showParserStatus("Trying unpkg CDN...");
-                        const module4 = await import('https://unpkg.com/sdfz-demo-parser@5.11.0?module');
-                        DemoParser = module4.DemoParser;
-                        console.log("Loaded parser from unpkg");
+                        // Fallback 2: Try jsdelivr CDN
+                        showParserStatus("Trying jsdelivr CDN...");
+                        const module3 = await import('https://cdn.jsdelivr.net/npm/sdfz-demo-parser@5.11.0/+esm');
+                        DemoParser = module3.DemoParser;
+                        console.log("Loaded parser from jsdelivr");
                         hideParserStatus();
-                    } catch (e4) {
-                        console.error("All CDN sources failed:", { esm_bundle: e1.message, esm_default: e2.message, jsdelivr: e3.message, unpkg: e4.message });
-                        showParserStatus("Parser failed to load. Sample data will be used for demos.");
-                        // DemoParser will remain undefined, which we handle in parseReplayFile
-                        setTimeout(hideParserStatus, 3000); // Hide after 3 seconds
+                    } catch (e3) {
+                        console.warn("Failed to load from jsdelivr:", e3.message);
+                        try {
+                            // Fallback 3: Try unpkg CDN
+                            showParserStatus("Trying unpkg CDN...");
+                            const module4 = await import('https://unpkg.com/sdfz-demo-parser@5.11.0?module');
+                            DemoParser = module4.DemoParser;
+                            console.log("Loaded parser from unpkg");
+                            hideParserStatus();
+                        } catch (e4) {
+                            console.error("All CDN sources failed:", { esm_bundle: e1.message, esm_default: e2.message, jsdelivr: e3.message, unpkg: e4.message });
+                            showParserStatus("Parser failed to load. Sample data will be used for demos.");
+                            // DemoParser will remain undefined, which we handle in parseReplayFile
+                            setTimeout(hideParserStatus, 3000); // Hide after 3 seconds
+                        }
                     }
                 }
             }
@@ -315,8 +322,6 @@
         const confirmationMessage = document.getElementById('confirmationMessage');
         const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
         const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-        const parserStatus = document.getElementById('parserStatus');
-        const parserStatusText = document.getElementById('parserStatusText');
 
         // --- Core Logic: Authentication ---
         auth.onAuthStateChanged(async (user) => {
@@ -328,6 +333,16 @@
             }
             updateUI();
         });
+
+        // --- Initialize Parser after DOM is ready ---
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadParser();
+            });
+        } else {
+            // DOM is already loaded
+            await loadParser();
+        }
 
         function updateUI() {
             if (currentUser) {
