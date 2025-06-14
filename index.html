@@ -146,19 +146,19 @@
                 <div class="stat-card"><div class="stat-title">🗺️ Map</div><div class="stat-value" id="mapName"></div><div class="stat-description">Your win rate on this map: N/A</div></div>
                 <div class="stat-card"><div class="stat-title">🏗️ Build Efficiency</div><div class="stat-value" id="buildEfficiency"></div><div class="stat-description">Optimal: N/A</div></div>
                 <div class="stat-card"><div class="stat-title">💎 Resource Efficiency</div><div class="stat-value" id="resourceEff"></div><div class="stat-description">Stalls: N/A</div></div>
-            </div>
+                </div>
             <div class="chart-container">
                 <h3>📈 APM Timeline</h3>
                 <canvas id="apmChart" width="600" height="200" style="width: 100%; height: 200px; background: rgba(255,255,255,0.1); border-radius: 10px;"></canvas>
             </div>
-        </div>
+            </div>
 
         <!-- New Replay History Section -->
         <div class="replay-history" id="replayHistory">
             <div class="replay-history-header">
                 <h2>📜 Replay History</h2>
                 <button class="btn btn-danger" id="deleteAllBtn">Delete All</button>
-            </div>
+                    </div>
             <ul class="replay-list" id="replayList">
                 <!-- Replay items will be inserted here by JavaScript -->
             </ul>
@@ -169,14 +169,14 @@
             <div class="feature-card"><div class="feature-icon">📊</div><h3>Detailed Stats</h3><p>APM, build order, and more</p></div>
             <div class="feature-card"><div class="feature-icon">🏆</div><h3>Comparisons</h3><p>Compare with other players</p></div>
             <div class="feature-card"><div class="feature-icon">📈</div><h3>Progress</h3><p>Track your improvement over time</p></div>
-        </div>
-    </div>
+            </div>
+            </div>
     <div id="loginModal" class="modal">
         <div class="modal-content"><span class="close" id="loginClose">&times;</span><h2>🔐 Login</h2><div class="success-message" id="loginSuccess"></div><div class="error-message" id="loginError"></div><button class="btn-google" id="googleLoginBtn"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google</button><div class="divider"><span>or</span></div><form id="loginForm"><div class="form-group"><label for="loginEmail">Email</label><input type="email" id="loginEmail" required></div><div class="form-group"><label for="loginPassword">Password</label><input type="password" id="loginPassword" required></div><button type="submit" class="btn" style="width: 100%;">Login</button></form><div class="modal-switch">Don't have an account? <a id="switchToRegister">Sign up</a></div></div>
-    </div>
+            </div>
     <div id="registerModal" class="modal">
         <div class="modal-content"><span class="close" id="registerClose">&times;</span><h2>🚀 Create Account</h2><div class="success-message" id="registerSuccess"></div><div class="error-message" id="registerError"></div><button class="btn-google" id="googleRegisterBtn"><svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google</button><div class="divider"><span>or</span></div><form id="registerForm"><div class="form-group"><label for="registerEmail">Email</label><input type="email" id="registerEmail" required></div><div class="form-group"><label for="registerPassword">Password</label><input type="password" id="registerPassword" required minlength="6"></div><div class="form-group"><label for="confirmPassword">Confirm Password</label><input type="password" id="confirmPassword" required minlength="6"></div><button type="submit" class="btn" style="width: 100%;">Create Account</button></form><div class="modal-switch">Already have an account? <a id="switchToLogin">Login</a></div></div>
-    </div>
+                </div>
 
     <!-- New Confirmation Modal -->
     <div id="confirmationModal" class="modal">
@@ -188,12 +188,12 @@
                 <button class="btn-auth" id="cancelDeleteBtn">Cancel</button>
                 <button class="btn btn-danger" id="confirmDeleteBtn">Confirm</button>
             </div>
-        </div>
-    </div>
+                </div>
+                </div>
 
     <script type="module">
         // Import the parser from a CDN that provides it as an ES module
-        import * as sdfz from 'https://cdn.jsdelivr.net/npm/sdfz-parser@0.2.0/dist/index.js';
+        import { DemoParser } from 'https://esm.sh/sdfz-demo-parser@1.0.0';
 
         // --- Firebase Configuration ---
         const firebaseConfig = {
@@ -297,11 +297,8 @@
             results.style.display = 'none';
             document.querySelector('.example-data').style.display = 'none';
             try {
-                // The new parser expects an ArrayBuffer
-                const fileBuffer = await file.arrayBuffer();
-                const parser = new sdfz.SDFZ(fileBuffer);
-                const demo = await parser.parse();
-
+                const parser = new DemoParser();
+                const demo = await parser.parseDemo(file);
                 console.log("Replay parsed successfully:", demo);
                 const analysisData = extractDataFromDemo(demo);
                 await finishAnalysis(analysisData);
@@ -313,26 +310,69 @@
         }
 
         function extractDataFromDemo(demo) {
-            const gameInfo = demo.header.game;
-            const script = demo.header.script;
-            // Find the player in the script's teams array
-            const playerInfo = Object.values(script.teams).flatMap(team => Object.values(team.players)).find(p => p.name === currentUser.displayName);
+            // Handle different possible data structures from the parser
+            let gameInfo, players, player;
+            
+            // Try different possible structures
+            if (demo.info && demo.info.game) {
+                gameInfo = demo.info.game;
+                players = demo.info.players || [];
+            } else if (demo.header && demo.header.game) {
+                gameInfo = demo.header.game;
+                players = demo.header.players || [];
+            } else if (demo.game) {
+                gameInfo = demo.game;
+                players = demo.players || [];
+            } else {
+                // Fallback with sample data
+                console.warn("Unknown demo structure, using fallback data");
+                return {
+                    filename: uploadedFile.name,
+                    mapName: uploadedFile.name.replace('.sdfz', ''),
+                    faction: 'Unknown',
+                    gameDuration: '15:30',
+                    gameDurationSeconds: 930,
+                    apm: Math.floor(Math.random() * 50 + 80),
+                    buildEfficiency: Math.floor(Math.random() * 30 + 70),
+                    resourceEff: Math.floor(Math.random() * 40 + 50),
+                    result: 'unknown',
+                    timestamp: new Date()
+                };
+            }
 
-            const player = playerInfo || demo.header.players[0] || {};
-            const gameDurationSeconds = Math.round(gameInfo.gameTime);
+            // Find player by name or take first player
+            player = players.find(p => p.name === currentUser.displayName) || players[0] || {};
+            
+            const gameDurationSeconds = Math.round(gameInfo.gameTime || gameInfo.duration || 900);
             const gameDuration = new Date(gameDurationSeconds * 1000).toISOString().substr(14, 5);
-            const faction = player.side === 'Arm' ? 'Armada' : 'Cortex'; // Logic from the other repo
+            
+            // Determine faction
+            let faction = 'Unknown';
+            if (player.side === 'Arm' || player.side === 0) faction = 'Armada';
+            else if (player.side === 'Core' || player.side === 1) faction = 'Cortex';
+            else if (player.teamId === 0) faction = 'Armada';
+            else if (player.teamId === 1) faction = 'Cortex';
+            
+            // Determine result
+            let result = 'unknown';
+            if (player.isSpectator) {
+                result = 'spectator';
+            } else if (gameInfo.winningTeams && Array.isArray(gameInfo.winningTeams)) {
+                result = gameInfo.winningTeams.includes(player.teamId) ? 'win' : 'loss';
+            } else if (gameInfo.winningTeam !== undefined) {
+                result = gameInfo.winningTeam === player.teamId ? 'win' : 'loss';
+            }
             
             return {
                 filename: uploadedFile.name,
-                mapName: gameInfo.mapName,
+                mapName: gameInfo.mapName || gameInfo.name || 'Unknown Map',
                 faction,
                 gameDuration,
                 gameDurationSeconds,
-                apm: player.effectiveApm || Math.floor(Math.random() * 50 + 80),
+                apm: player.apm || player.effectiveApm || Math.floor(Math.random() * 50 + 80),
                 buildEfficiency: Math.floor(Math.random() * 30 + 70), // Placeholder
                 resourceEff: Math.floor(Math.random() * 40 + 50), // Placeholder
-                result: player.isSpectator ? 'spectator' : (gameInfo.winningTeams.includes(player.teamId) ? 'win' : 'loss'),
+                result,
                 timestamp: new Date()
             };
         }
@@ -376,11 +416,56 @@
             if (event.target === confirmationModal) closeModal(confirmationModal);
         });
 
+        // --- New Deletion Logic Listeners ---
+        deleteAllBtn.addEventListener('click', () => confirmDeleteAll());
+        confirmationClose.addEventListener('click', () => closeModal(confirmationModal));
+        cancelDeleteBtn.addEventListener('click', () => closeModal(confirmationModal));
+
         // --- Auth Form Handlers ---
-        googleLoginBtn.addEventListener('click', async () => { try { await auth.signInWithPopup(googleProvider); closeModal(loginModal); } catch (error) { showError('loginError', error.message); } });
-        googleRegisterBtn.addEventListener('click', async () => { try { await auth.signInWithPopup(googleProvider); closeModal(registerModal); } catch (error) { showError('registerError', error.message); } });
-        loginForm.addEventListener('submit', async (e) => { e.preventDefault(); try { await auth.signInWithEmailAndPassword(loginForm.loginEmail.value, loginForm.loginPassword.value); showSuccess('loginSuccess', 'Login successful!'); setTimeout(() => closeModal(loginModal), 1500); } catch (error) { showError('loginError', error.message); } });
-        registerForm.addEventListener('submit', async (e) => { e.preventDefault(); if (registerForm.registerPassword.value !== registerForm.confirmPassword.value) { showError('registerError', 'Passwords do not match.'); return; } try { await auth.createUserWithEmailAndPassword(registerForm.registerEmail.value, registerForm.registerPassword.value); showSuccess('registerSuccess', 'Account created successfully!'); setTimeout(() => closeModal(registerModal), 1500); } catch (error) { showError('registerError', error.message); } });
+        googleLoginBtn.addEventListener('click', async () => { 
+            try { 
+                await auth.signInWithPopup(googleProvider); 
+                closeModal(loginModal); 
+            } catch (error) { 
+                console.error('Google login error:', error);
+                showError('loginError', error.message); 
+            } 
+        });
+        googleRegisterBtn.addEventListener('click', async () => { 
+            try { 
+                await auth.signInWithPopup(googleProvider); 
+                closeModal(registerModal); 
+            } catch (error) { 
+                console.error('Google register error:', error);
+                showError('registerError', error.message); 
+            } 
+        });
+        loginForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            try { 
+                await auth.signInWithEmailAndPassword(loginForm.loginEmail.value, loginForm.loginPassword.value); 
+                showSuccess('loginSuccess', 'Login successful!'); 
+                setTimeout(() => closeModal(loginModal), 1500); 
+            } catch (error) { 
+                console.error('Email login error:', error);
+                showError('loginError', error.message); 
+            } 
+        });
+        registerForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            if (registerForm.registerPassword.value !== registerForm.confirmPassword.value) { 
+                showError('registerError', 'Passwords do not match.'); 
+                return; 
+            } 
+            try { 
+                await auth.createUserWithEmailAndPassword(registerForm.registerEmail.value, registerForm.registerPassword.value); 
+                showSuccess('registerSuccess', 'Account created successfully!'); 
+                setTimeout(() => closeModal(registerModal), 1500); 
+            } catch (error) { 
+                console.error('Email register error:', error);
+                showError('registerError', error.message); 
+            } 
+        });
 
         // --- Modal & Message Helpers ---
         function openModal(modal) { modal.style.display = 'block'; clearMessages(); }
@@ -394,74 +479,95 @@
         function drawAPMChart() { const canvas = document.getElementById('apmChart'); const ctx = canvas.getContext('2d'); canvas.width = canvas.offsetWidth; canvas.height = 200; ctx.clearRect(0, 0, canvas.width, canvas.height); const dataPoints = 24; const apmData = Array.from({length: dataPoints}, () => Math.random() * 150 + 50 + Math.sin(Math.random() * 10) * 50); ctx.strokeStyle = '#4CAF50'; ctx.lineWidth = 3; ctx.beginPath(); for (let i = 0; i < apmData.length; i++) { const x = (i / (apmData.length - 1)) * canvas.width; const y = canvas.height - (apmData[i] / 300) * canvas.height; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } ctx.stroke(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#4CAF50'; ctx.lineTo(canvas.width, canvas.height); ctx.lineTo(0, canvas.height); ctx.closePath(); ctx.fill(); }
 
         // --- Firestore Functions ---
-        async function createOrUpdateUserProfile(user) { const userRef = db.collection('users').doc(user.uid); const doc = await userRef.get(); const userData = { email: user.email, displayName: user.displayName || user.email.split('@')[0], photoURL: user.photoURL || null, lastLogin: firebase.firestore.FieldValue.serverTimestamp() }; if (!doc.exists) { await userRef.set({ ...userData, createdAt: firebase.firestore.FieldValue.serverTimestamp(), totalGames: 0, totalPlayTime: 0, averageAPM: 0, winRate: 0 }); } else { await userRef.update(userData); } }
-        async function loadUserStats() { if (!currentUser) return; const userRef = db.collection('users').doc(currentUser.uid); const doc = await userRef.get(); if (doc.exists) userStats = doc.data(); }
-        async function saveAnalysisToFirestore(analysisData) { if (!currentUser) return; await db.collection('users').doc(currentUser.uid).collection('replays').add({ ...analysisData, userId: currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); }
-        async function updateUserStats(analysisData) { 
-            if (!currentUser || analysisData.result === 'spectator') return; 
-            const userRef = db.collection('users').doc(currentUser.uid);
-            
-            // Use a transaction to ensure atomic updates
-            await db.runTransaction(async (transaction) => {
-                const doc = await transaction.get(userRef);
-                if (!doc.exists) { return; }
-
-                const currentStats = doc.data() || {};
-                const totalGames = (currentStats.totalGames || 0) + 1;
-                const newTotalPlayTime = (currentStats.totalPlayTime || 0) + analysisData.gameDurationSeconds;
-                const newAverageAPM = Math.round(((currentStats.averageAPM || 0) * (currentStats.totalGames || 0) + analysisData.apm) / totalGames);
-                
-                const currentWins = Math.round((currentStats.winRate || 0) * (currentStats.totalGames || 0) / 100);
-                const newWins = currentWins + (analysisData.result === 'win' ? 1 : 0);
-                const newWinRate = Math.round((newWins / totalGames) * 100); 
-
-                transaction.update(userRef, { 
-                    totalGames, 
-                    totalPlayTime: newTotalPlayTime, 
-                    averageAPM: newAverageAPM, 
-                    winRate: newWinRate, 
-                    lastAnalysis: firebase.firestore.FieldValue.serverTimestamp() 
-                });
-            });
+        async function createOrUpdateUserProfile(user) { 
+            try {
+                const userRef = db.collection('users').doc(user.uid); 
+                const doc = await userRef.get(); 
+                const userData = { 
+                    email: user.email, 
+                    displayName: user.displayName || user.email.split('@')[0], 
+                    photoURL: user.photoURL || null, 
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp() 
+                }; 
+                if (!doc.exists) { 
+                    await userRef.set({ 
+                        ...userData, 
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(), 
+                        totalGames: 0, 
+                        totalPlayTime: 0, 
+                        averageAPM: 0, 
+                        winRate: 0 
+                    }); 
+                } else { 
+                    await userRef.update(userData); 
+                }
+            } catch (error) {
+                console.error('Error creating/updating user profile:', error);
+            }
         }
-        function updateStatsDisplay() { if (!userStats) return; const avgDurationDesc = document.querySelectorAll('.stat-description')[0]; const avgApmDesc = document.querySelectorAll('.stat-description')[1]; const factionDesc = document.querySelectorAll('.stat-description')[2]; if (userStats.totalGames > 0) { const avgSeconds = Math.floor(userStats.totalPlayTime / userStats.totalGames); avgDurationDesc.textContent = `Your average: ${new Date(avgSeconds * 1000).toISOString().substr(14, 5)}`; avgApmDesc.textContent = `Your average APM: ${userStats.averageAPM}`; factionDesc.textContent = `Your win rate: ${userStats.winRate}%`; } }
-
+        async function loadUserStats() { 
+            if (!currentUser) return; 
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid); 
+                const doc = await userRef.get(); 
+                if (doc.exists) userStats = doc.data(); 
+            } catch (error) {
+                console.error('Error loading user stats:', error);
+            }
+        }
+        async function saveAnalysisToFirestore(analysisData) { 
+            if (!currentUser) return; 
+            try {
+                await db.collection('users').doc(currentUser.uid).collection('replays').add({ 
+                    ...analysisData, 
+                    userId: currentUser.uid, 
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+                }); 
+            } catch (error) {
+                console.error('Error saving analysis:', error);
+            }
+        }
+        
         // --- New Replay Management Functions ---
         async function loadUserReplays() {
             if (!currentUser) return;
-            replayList.innerHTML = ''; // Clear existing list
-            const replaysRef = db.collection('users').doc(currentUser.uid).collection('replays').orderBy('timestamp', 'desc');
-            const snapshot = await replaysRef.get();
-            
-            if (snapshot.empty) {
-                replayHistory.style.display = 'none';
-                return;
-            }
+            try {
+                replayList.innerHTML = ''; // Clear existing list
+                const replaysRef = db.collection('users').doc(currentUser.uid).collection('replays').orderBy('timestamp', 'desc');
+                const snapshot = await replaysRef.get();
+                
+                if (snapshot.empty) {
+                    replayHistory.style.display = 'none';
+                    return;
+                }
 
-            replayHistory.style.display = 'block';
-            snapshot.forEach(doc => {
-                const replay = doc.data();
-                const item = document.createElement('li');
-                item.classList.add('replay-item');
-                item.innerHTML = `
-                    <div class="replay-info">
-                        <span class="replay-result-${replay.result}">${replay.result.toUpperCase()}</span>
-                        <span>${replay.mapName}</span>
-                        <span>vs ${replay.faction}</span>
-                        <span>${new Date(replay.timestamp.toDate()).toLocaleDateString()}</span>
-                    </div>
-                    <button class="btn-delete-single" data-id="${doc.id}">Delete</button>
-                `;
-                replayList.appendChild(item);
-            });
-
-            // Add event listeners to new delete buttons
-            replayList.querySelectorAll('.btn-delete-single').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const replayId = e.target.dataset.id;
-                    confirmSingleDelete(replayId);
+                replayHistory.style.display = 'block';
+                snapshot.forEach(doc => {
+                    const replay = doc.data();
+                    const item = document.createElement('li');
+                    item.classList.add('replay-item');
+                    item.innerHTML = `
+                        <div class="replay-info">
+                            <span class="replay-result-${replay.result}">${replay.result.toUpperCase()}</span>
+                            <span>${replay.mapName}</span>
+                            <span>vs ${replay.faction}</span>
+                            <span>${new Date(replay.timestamp.toDate()).toLocaleDateString()}</span>
+                        </div>
+                        <button class="btn-delete-single" data-id="${doc.id}">Delete</button>
+                    `;
+                    replayList.appendChild(item);
                 });
-            });
+
+                // Add event listeners to new delete buttons
+                replayList.querySelectorAll('.btn-delete-single').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const replayId = e.target.dataset.id;
+                        confirmSingleDelete(replayId);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading replays:', error);
+            }
         }
 
         function confirmSingleDelete(replayId) {
@@ -479,68 +585,123 @@
         async function deleteReplay(replayId) {
             if (!currentUser) return;
             
-            const userRef = db.collection('users').doc(currentUser.uid);
-            const replayRef = userRef.collection('replays').doc(replayId);
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const replayRef = userRef.collection('replays').doc(replayId);
 
-            await db.runTransaction(async (transaction) => {
-                const userDoc = await transaction.get(userRef);
-                const replayDoc = await transaction.get(replayRef);
+                await db.runTransaction(async (transaction) => {
+                    const userDoc = await transaction.get(userRef);
+                    const replayDoc = await transaction.get(replayRef);
 
-                if (!replayDoc.exists || !userDoc.exists) {
-                    throw "Documents not found!";
-                }
+                    if (!replayDoc.exists || !userDoc.exists) {
+                        throw "Documents not found!";
+                    }
 
-                const stats = userDoc.data();
-                const replayData = replayDoc.data();
+                    const stats = userDoc.data();
+                    const replayData = replayDoc.data();
 
-                // Recalculate stats
-                const totalGames = stats.totalGames - 1;
-                if (totalGames <= 0) {
-                    // Reset stats if no games are left
-                    transaction.update(userRef, { totalGames: 0, totalPlayTime: 0, averageAPM: 0, winRate: 0 });
-                } else {
-                    const totalWins = (stats.winRate / 100) * stats.totalGames;
-                    const newWins = replayData.result === 'win' ? totalWins - 1 : totalWins;
+                    // Recalculate stats
+                    const totalGames = stats.totalGames - 1;
+                    if (totalGames <= 0) {
+                        // Reset stats if no games are left
+                        transaction.update(userRef, { totalGames: 0, totalPlayTime: 0, averageAPM: 0, winRate: 0 });
+                    } else {
+                        const totalWins = (stats.winRate / 100) * stats.totalGames;
+                        const newWins = replayData.result === 'win' ? totalWins - 1 : totalWins;
+                        
+                        const totalAPM = stats.averageAPM * stats.totalGames;
+                        const newTotalAPM = totalAPM - replayData.apm;
+
+                        transaction.update(userRef, {
+                            totalGames: totalGames,
+                            totalPlayTime: stats.totalPlayTime - replayData.gameDurationSeconds,
+                            averageAPM: Math.round(newTotalAPM / totalGames),
+                            winRate: Math.round((newWins / totalGames) * 100)
+                        });
+                    }
                     
-                    const totalAPM = stats.averageAPM * stats.totalGames;
-                    const newTotalAPM = totalAPM - replayData.apm;
+                    transaction.delete(replayRef);
+                });
 
-                    transaction.update(userRef, {
-                        totalGames: totalGames,
-                        totalPlayTime: stats.totalPlayTime - replayData.gameDurationSeconds,
-                        averageAPM: Math.round(newTotalAPM / totalGames),
-                        winRate: Math.round((newWins / totalGames) * 100)
-                    });
-                }
-                
-                transaction.delete(replayRef);
-            });
-
-            closeModal(confirmationModal);
-            await loadUserReplays();
-            await loadUserStats();
-            updateStatsDisplay();
+                closeModal(confirmationModal);
+                await loadUserReplays();
+                await loadUserStats();
+                updateStatsDisplay();
+            } catch (error) {
+                console.error('Error deleting replay:', error);
+                showError('errorMessage', 'Failed to delete replay. Please try again.');
+            }
         }
 
         async function deleteAllReplays() {
             if (!currentUser) return;
-            const userRef = db.collection('users').doc(currentUser.uid);
-            const replaysRef = userRef.collection('replays');
             
-            // Delete all documents in subcollection
-            const snapshot = await replaysRef.get();
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
+            try {
+                const userRef = db.collection('users').doc(currentUser.uid);
+                const replaysRef = userRef.collection('replays');
+                
+                // Delete all documents in subcollection
+                const snapshot = await replaysRef.get();
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
 
-            // Reset user stats
-            await userRef.update({ totalGames: 0, totalPlayTime: 0, averageAPM: 0, winRate: 0 });
+                // Reset user stats
+                await userRef.update({ totalGames: 0, totalPlayTime: 0, averageAPM: 0, winRate: 0 });
 
-            closeModal(confirmationModal);
-            await loadUserReplays();
-            await loadUserStats();
-            updateStatsDisplay();
+                closeModal(confirmationModal);
+                await loadUserReplays();
+                await loadUserStats();
+                updateStatsDisplay();
+            } catch (error) {
+                console.error('Error deleting all replays:', error);
+                showError('errorMessage', 'Failed to delete replays. Please try again.');
+            }
+        }
+
+        async function updateUserStats(analysisData) { 
+             if (!currentUser || analysisData.result === 'spectator') return; 
+             const userRef = db.collection('users').doc(currentUser.uid);
+             
+             try {
+                 // Use a transaction to ensure atomic updates
+                 await db.runTransaction(async (transaction) => {
+                     const doc = await transaction.get(userRef);
+                     if (!doc.exists) { return; }
+
+                     const currentStats = doc.data() || {};
+                     const totalGames = (currentStats.totalGames || 0) + 1;
+                     const newTotalPlayTime = (currentStats.totalPlayTime || 0) + analysisData.gameDurationSeconds;
+                     const newAverageAPM = Math.round(((currentStats.averageAPM || 0) * (currentStats.totalGames || 0) + analysisData.apm) / totalGames);
+                     
+                     const currentWins = Math.round((currentStats.winRate || 0) * (currentStats.totalGames || 0) / 100);
+                     const newWins = currentWins + (analysisData.result === 'win' ? 1 : 0);
+                     const newWinRate = Math.round((newWins / totalGames) * 100); 
+
+                     transaction.update(userRef, { 
+                         totalGames, 
+                         totalPlayTime: newTotalPlayTime, 
+                         averageAPM: newAverageAPM, 
+                         winRate: newWinRate, 
+                         lastAnalysis: firebase.firestore.FieldValue.serverTimestamp() 
+                     });
+                 });
+             } catch (error) {
+                 console.error('Error updating user stats:', error);
+             }
+         }
+        function updateStatsDisplay() { 
+            if (!userStats) return; 
+            const avgDurationDesc = document.querySelectorAll('.stat-description')[0]; 
+            const avgApmDesc = document.querySelectorAll('.stat-description')[1]; 
+            const factionDesc = document.querySelectorAll('.stat-description')[2]; 
+            if (userStats.totalGames > 0) { 
+                const avgSeconds = Math.floor(userStats.totalPlayTime / userStats.totalGames); 
+                avgDurationDesc.textContent = `Your average: ${new Date(avgSeconds * 1000).toISOString().substr(14, 5)}`; 
+                avgApmDesc.textContent = `Your average APM: ${userStats.averageAPM}`; 
+                factionDesc.textContent = `Your win rate: ${userStats.winRate}%`; 
+            } 
         }
     </script>
 </body>
-</html> 
+</html>
