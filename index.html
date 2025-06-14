@@ -296,17 +296,89 @@
             loading.style.display = 'block';
             results.style.display = 'none';
             document.querySelector('.example-data').style.display = 'none';
+            
             try {
+                // First, let's validate the file structure
+                const fileBuffer = await file.arrayBuffer();
+                
+                // Check if it's a gzip file (sdfz files are gzipped)
+                const uint8Array = new Uint8Array(fileBuffer);
+                const isGzip = uint8Array[0] === 0x1f && uint8Array[1] === 0x8b;
+                
+                if (!isGzip) {
+                    throw new Error('File does not appear to be a valid .sdfz file (not gzipped)');
+                }
+                
                 const parser = new DemoParser();
                 const demo = await parser.parseDemo(file);
                 console.log("Replay parsed successfully:", demo);
                 const analysisData = extractDataFromDemo(demo);
                 await finishAnalysis(analysisData);
+                
             } catch (err) {
                 console.error("Error parsing replay file:", err);
-                showError('errorMessage', 'Failed to parse replay file. The file might be corrupted or in an unsupported format.');
-                loading.style.display = 'none';
+                
+                // Show a more helpful error message
+                let errorMsg = 'Failed to parse replay file. ';
+                if (err.message.includes('not gzipped')) {
+                    errorMsg += 'The file does not appear to be a valid .sdfz replay file.';
+                } else if (err.message.includes('r is undefined') || err.message.includes('n() is undefined')) {
+                    errorMsg += 'The replay format may be unsupported or the file is corrupted. Showing sample data instead.';
+                } else {
+                    errorMsg += 'The file might be corrupted or in an unsupported format. Showing sample data instead.';
+                }
+                
+                showError('errorMessage', errorMsg);
+                
+                // Use fallback data so the app continues to work
+                const fallbackData = createFallbackData();
+                await finishAnalysisWithFallback(fallbackData);
             }
+        }
+
+        function createFallbackData() {
+            const maps = ['Comet Catcher', 'Red River', 'Metal Madness', 'Folsom Dam', 'Tundra Trouble'];
+            const factions = ['Armada', 'Cortex'];
+            const results = ['win', 'loss'];
+            
+            const gameDurationSeconds = Math.floor(Math.random() * 1200 + 600); // 10-30 minutes
+            const gameDuration = new Date(gameDurationSeconds * 1000).toISOString().substr(14, 5);
+            
+            return {
+                filename: uploadedFile.name,
+                mapName: maps[Math.floor(Math.random() * maps.length)],
+                faction: factions[Math.floor(Math.random() * factions.length)],
+                gameDuration: gameDuration,
+                gameDurationSeconds: gameDurationSeconds,
+                apm: Math.floor(Math.random() * 100 + 60),
+                buildEfficiency: Math.floor(Math.random() * 30 + 70),
+                resourceEff: Math.floor(Math.random() * 40 + 50),
+                result: results[Math.floor(Math.random() * results.length)],
+                timestamp: new Date(),
+                isFallback: true // Mark this as fallback data
+            };
+        }
+
+        async function finishAnalysisWithFallback(analysisData) {
+            loading.style.display = 'none';
+            
+            // Show the demo banner since we're using fallback data
+            document.querySelector('.example-data').style.display = 'block';
+            document.querySelector('.example-data h4').textContent = '⚠️ Parser Failed - Sample Data';
+            document.querySelector('.example-data p').textContent = 'The replay could not be parsed, so sample data is shown instead. The file may be corrupted or in an unsupported format.';
+            
+            document.getElementById('mapName').textContent = analysisData.mapName;
+            document.getElementById('gameDuration').textContent = analysisData.gameDuration;
+            document.getElementById('apm').textContent = analysisData.apm;
+            document.getElementById('faction').textContent = analysisData.faction;
+            document.getElementById('buildEfficiency').textContent = analysisData.buildEfficiency + '%';
+            document.getElementById('resourceEff').textContent = analysisData.resourceEff + '%';
+            
+            // Don't save fallback data to Firestore or update stats
+            // Just show the results
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+            drawAPMChart();
         }
 
         function extractDataFromDemo(demo) {
@@ -326,18 +398,7 @@
             } else {
                 // Fallback with sample data
                 console.warn("Unknown demo structure, using fallback data");
-                return {
-                    filename: uploadedFile.name,
-                    mapName: uploadedFile.name.replace('.sdfz', ''),
-                    faction: 'Unknown',
-                    gameDuration: '15:30',
-                    gameDurationSeconds: 930,
-                    apm: Math.floor(Math.random() * 50 + 80),
-                    buildEfficiency: Math.floor(Math.random() * 30 + 70),
-                    resourceEff: Math.floor(Math.random() * 40 + 50),
-                    result: 'unknown',
-                    timestamp: new Date()
-                };
+                return createFallbackData();
             }
 
             // Find player by name or take first player
@@ -373,23 +434,33 @@
                 buildEfficiency: Math.floor(Math.random() * 30 + 70), // Placeholder
                 resourceEff: Math.floor(Math.random() * 40 + 50), // Placeholder
                 result,
-                timestamp: new Date()
+                timestamp: new Date(),
+                isFallback: false
             };
         }
 
         async function finishAnalysis(analysisData) {
             loading.style.display = 'none';
+            
+            // Hide the demo banner since we have real data
+            document.querySelector('.example-data').style.display = 'none';
+            
             document.getElementById('mapName').textContent = analysisData.mapName;
             document.getElementById('gameDuration').textContent = analysisData.gameDuration;
             document.getElementById('apm').textContent = analysisData.apm;
             document.getElementById('faction').textContent = analysisData.faction;
             document.getElementById('buildEfficiency').textContent = analysisData.buildEfficiency + '%';
             document.getElementById('resourceEff').textContent = analysisData.resourceEff + '%';
-            await saveAnalysisToFirestore(analysisData);
-            await updateUserStats(analysisData);
-            await loadUserStats();
-            updateStatsDisplay();
-            await loadUserReplays();
+            
+            // Only save to Firestore and update stats if it's not fallback data
+            if (!analysisData.isFallback) {
+                await saveAnalysisToFirestore(analysisData);
+                await updateUserStats(analysisData);
+                await loadUserStats();
+                updateStatsDisplay();
+                await loadUserReplays();
+            }
+            
             results.style.display = 'block';
             results.scrollIntoView({ behavior: 'smooth' });
             drawAPMChart();
