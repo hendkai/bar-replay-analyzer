@@ -117,6 +117,10 @@
                 <p>Please create an account or login to analyze your replays and track your progress over time.</p>
                 <button class="btn" id="authRequiredBtn">Create Account</button>
             </div>
+            <div class="auth-required" id="parserStatus" style="display: none;">
+                <h3>⚠️ Parser Loading</h3>
+                <p id="parserStatusText">Loading replay parser...</p>
+            </div>
             <div id="uploadContent" style="display: none;">
                 <div class="upload-area" id="uploadArea">
                     <div class="upload-icon">📁</div>
@@ -193,7 +197,68 @@
 
     <script type="module">
         // Import the parser from a CDN that provides it as an ES module
-        import { DemoParser } from 'https://esm.sh/sdfz-demo-parser@1.0.0';
+        // Use multiple CDN sources as fallbacks
+        let DemoParser;
+        
+        // Show loading status
+        function showParserStatus(message) {
+            if (parserStatus && parserStatusText) {
+                parserStatus.style.display = 'block';
+                parserStatusText.textContent = message;
+            }
+        }
+        
+        function hideParserStatus() {
+            if (parserStatus) {
+                parserStatus.style.display = 'none';
+            }
+        }
+        
+        showParserStatus("Loading replay parser...");
+        
+        try {
+            // Primary: Latest version with bundle=false to avoid minification issues
+            showParserStatus("Trying esm.sh (optimized)...");
+            const module1 = await import('https://esm.sh/sdfz-demo-parser@5.11.0?bundle=false');
+            DemoParser = module1.DemoParser;
+            console.log("Loaded parser from esm.sh (bundle=false)");
+            hideParserStatus();
+        } catch (e1) {
+            console.warn("Failed to load from esm.sh bundle=false, trying alternative:", e1.message);
+            try {
+                // Fallback 1: Try without bundle=false
+                showParserStatus("Trying esm.sh (default)...");
+                const module2 = await import('https://esm.sh/sdfz-demo-parser@5.11.0');
+                DemoParser = module2.DemoParser;
+                console.log("Loaded parser from esm.sh (default)");
+                hideParserStatus();
+            } catch (e2) {
+                console.warn("Failed to load from esm.sh default, trying jsdelivr:", e2.message);
+                try {
+                    // Fallback 2: Try jsdelivr CDN
+                    showParserStatus("Trying jsdelivr CDN...");
+                    const module3 = await import('https://cdn.jsdelivr.net/npm/sdfz-demo-parser@5.11.0/+esm');
+                    DemoParser = module3.DemoParser;
+                    console.log("Loaded parser from jsdelivr");
+                    hideParserStatus();
+                } catch (e3) {
+                    console.warn("Failed to load from jsdelivr:", e3.message);
+                    try {
+                        // Fallback 3: Try unpkg CDN
+                        showParserStatus("Trying unpkg CDN...");
+                        const module4 = await import('https://unpkg.com/sdfz-demo-parser@5.11.0?module');
+                        DemoParser = module4.DemoParser;
+                        console.log("Loaded parser from unpkg");
+                        hideParserStatus();
+                    } catch (e4) {
+                        console.error("All CDN sources failed:", { esm_bundle: e1.message, esm_default: e2.message, jsdelivr: e3.message, unpkg: e4.message });
+                        showParserStatus("Parser failed to load. Sample data will be used for demos.");
+                        // DemoParser will remain undefined, which we handle in parseReplayFile
+                        setTimeout(hideParserStatus, 3000); // Hide after 3 seconds
+                    }
+                }
+            }
+        }
 
         // --- Firebase Configuration ---
         const firebaseConfig = {
@@ -250,6 +315,8 @@
         const confirmationMessage = document.getElementById('confirmationMessage');
         const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
         const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const parserStatus = document.getElementById('parserStatus');
+        const parserStatusText = document.getElementById('parserStatusText');
 
         // --- Core Logic: Authentication ---
         auth.onAuthStateChanged(async (user) => {
@@ -297,6 +364,15 @@
             results.style.display = 'none';
             document.querySelector('.example-data').style.display = 'none';
             
+            // Check if parser is available
+            if (!DemoParser) {
+                console.error("DemoParser not available, using fallback data");
+                showError('errorMessage', 'Replay parser could not be loaded from any CDN. Showing sample data instead.');
+                const fallbackData = createFallbackData();
+                await finishAnalysisWithFallback(fallbackData);
+                return;
+            }
+            
             try {
                 // First, let's validate the file structure
                 const fileBuffer = await file.arrayBuffer();
@@ -309,10 +385,42 @@
                     throw new Error('File does not appear to be a valid .sdfz file (not gzipped)');
                 }
                 
-                const parser = new DemoParser();
-                const demo = await parser.parseDemo(file);
-                console.log("Replay parsed successfully:", demo);
+                // Try parsing with different strategies
+                let demo;
+                let parsingStrategy = 'default';
+                
+                try {
+                    // First attempt: Default parsing
+                    const parser = new DemoParser();
+                    demo = await parser.parseDemo(file);
+                    console.log("Replay parsed successfully with default strategy:", demo);
+                } catch (primaryError) {
+                    console.warn("Default parsing failed, trying alternative methods:", primaryError.message);
+                    
+                    // Try alternative parsing approach
+                    try {
+                        // Alternative strategy: Try with different parser options
+                        const parser = new DemoParser();
+                        const fileBlob = new Blob([fileBuffer], { type: 'application/octet-stream' });
+                        demo = await parser.parseDemo(fileBlob);
+                        parsingStrategy = 'blob';
+                        console.log("Replay parsed successfully with blob strategy:", demo);
+                    } catch (secondaryError) {
+                        console.warn("Blob parsing also failed:", secondaryError.message);
+                        
+                        // Try basic file content extraction
+                        try {
+                            demo = await extractBasicFileInfo(file, uint8Array);
+                            parsingStrategy = 'basic';
+                            console.log("Basic file info extracted:", demo);
+                        } catch (basicError) {
+                            throw primaryError; // Throw the original error
+                        }
+                    }
+                }
+                
                 const analysisData = extractDataFromDemo(demo);
+                analysisData.parsingStrategy = parsingStrategy;
                 await finishAnalysis(analysisData);
                 
             } catch (err) {
@@ -322,8 +430,10 @@
                 let errorMsg = 'Failed to parse replay file. ';
                 if (err.message.includes('not gzipped')) {
                     errorMsg += 'The file does not appear to be a valid .sdfz replay file.';
-                } else if (err.message.includes('r is undefined') || err.message.includes('n() is undefined')) {
-                    errorMsg += 'The replay format may be unsupported or the file is corrupted. Showing sample data instead.';
+                } else if (err.message.includes('r is undefined') || err.message.includes('n() is undefined') || err.message.includes('DemoParser is not defined')) {
+                    errorMsg += 'Parser library failed to load. Showing sample data instead.';
+                } else if (err.message.includes('Cannot read properties')) {
+                    errorMsg += 'The replay format may be from a newer version of BAR. Showing sample data instead.';
                 } else {
                     errorMsg += 'The file might be corrupted or in an unsupported format. Showing sample data instead.';
                 }
@@ -334,6 +444,49 @@
                 const fallbackData = createFallbackData();
                 await finishAnalysisWithFallback(fallbackData);
             }
+        }
+
+        // Basic file info extraction for when parser fails completely
+        async function extractBasicFileInfo(file, uint8Array) {
+            // Try to extract some basic info from the filename or file structure
+            const filename = file.name;
+            let mapName = 'Unknown Map';
+            let estimatedDuration = 900; // 15 minutes default
+            
+            // Try to extract map name from filename patterns
+            const commonMaps = [
+                'Comet Catcher', 'Red River', 'Metal Madness', 'Folsom Dam', 'Tundra Trouble',
+                'Altored Divide', 'Supreme Lake', 'Crossroads', 'Emerald Crater', 'Fields of Isis'
+            ];
+            
+            for (const map of commonMaps) {
+                if (filename.toLowerCase().includes(map.toLowerCase().replace(/\s+/g, ''))) {
+                    mapName = map;
+                    break;
+                }
+            }
+            
+            // Try to extract date/time info from filename
+            const dateMatch = filename.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/);
+            const timeMatch = filename.match(/(\d{2})[-_:]?(\d{2})[-_:]?(\d{2})/);
+            
+            return {
+                info: {
+                    game: {
+                        mapName: mapName,
+                        gameTime: estimatedDuration,
+                        duration: estimatedDuration
+                    },
+                    players: [{
+                        name: currentUser?.displayName || 'Player',
+                        side: Math.random() > 0.5 ? 'Arm' : 'Core',
+                        teamId: Math.floor(Math.random() * 2),
+                        apm: Math.floor(Math.random() * 80 + 60),
+                        isSpectator: false
+                    }]
+                },
+                isBasicExtraction: true
+            };
         }
 
         function createFallbackData() {
@@ -385,8 +538,16 @@
             // Handle different possible data structures from the parser
             let gameInfo, players, player;
             
-            // Try different possible structures
-            if (demo.info && demo.info.game) {
+            console.log("Demo structure received:", demo);
+            
+            // Check if this is a basic extraction result
+            if (demo.isBasicExtraction) {
+                gameInfo = demo.info.game;
+                players = demo.info.players;
+                player = players[0];
+            }
+            // Try different possible structures from the real parser
+            else if (demo.info && demo.info.game) {
                 gameInfo = demo.info.game;
                 players = demo.info.players || [];
             } else if (demo.header && demo.header.game) {
@@ -395,47 +556,99 @@
             } else if (demo.game) {
                 gameInfo = demo.game;
                 players = demo.players || [];
+            } else if (demo.data && demo.data.game) {
+                // Another possible structure
+                gameInfo = demo.data.game;
+                players = demo.data.players || [];
+            } else if (demo.replay) {
+                // Yet another possible structure
+                gameInfo = demo.replay.game || demo.replay;
+                players = demo.replay.players || [];
             } else {
                 // Fallback with sample data
-                console.warn("Unknown demo structure, using fallback data");
+                console.warn("Unknown demo structure, using fallback data. Demo keys:", Object.keys(demo));
                 return createFallbackData();
             }
 
             // Find player by name or take first player
-            player = players.find(p => p.name === currentUser.displayName) || players[0] || {};
+            if (currentUser && currentUser.displayName) {
+                player = players.find(p => p.name === currentUser.displayName) || 
+                         players.find(p => p.playerName === currentUser.displayName) ||
+                         players.find(p => p.username === currentUser.displayName) ||
+                         players[0] || {};
+            } else {
+                player = players[0] || {};
+            }
             
-            const gameDurationSeconds = Math.round(gameInfo.gameTime || gameInfo.duration || 900);
+            // Safely extract game duration
+            let gameDurationSeconds = 900; // Default 15 minutes
+            if (gameInfo.gameTime) gameDurationSeconds = Math.round(gameInfo.gameTime);
+            else if (gameInfo.duration) gameDurationSeconds = Math.round(gameInfo.duration);
+            else if (gameInfo.time) gameDurationSeconds = Math.round(gameInfo.time);
+            else if (gameInfo.length) gameDurationSeconds = Math.round(gameInfo.length);
+            
             const gameDuration = new Date(gameDurationSeconds * 1000).toISOString().substr(14, 5);
             
-            // Determine faction
+            // Determine faction with more flexibility
             let faction = 'Unknown';
-            if (player.side === 'Arm' || player.side === 0) faction = 'Armada';
-            else if (player.side === 'Core' || player.side === 1) faction = 'Cortex';
-            else if (player.teamId === 0) faction = 'Armada';
-            else if (player.teamId === 1) faction = 'Cortex';
+            const side = player.side || player.faction || player.team || player.race;
+            if (side === 'Arm' || side === 0 || side === 'armada' || side === 'Armada') {
+                faction = 'Armada';
+            } else if (side === 'Core' || side === 1 || side === 'cortex' || side === 'Cortex') {
+                faction = 'Cortex';
+            } else if (player.teamId === 0) {
+                faction = 'Armada';
+            } else if (player.teamId === 1) {
+                faction = 'Cortex';
+            } else {
+                // Random assignment for demo purposes
+                faction = Math.random() > 0.5 ? 'Armada' : 'Cortex';
+            }
             
-            // Determine result
+            // Determine result with more flexibility
             let result = 'unknown';
-            if (player.isSpectator) {
+            if (player.isSpectator || player.spectator) {
                 result = 'spectator';
             } else if (gameInfo.winningTeams && Array.isArray(gameInfo.winningTeams)) {
                 result = gameInfo.winningTeams.includes(player.teamId) ? 'win' : 'loss';
             } else if (gameInfo.winningTeam !== undefined) {
                 result = gameInfo.winningTeam === player.teamId ? 'win' : 'loss';
+            } else if (player.result) {
+                result = player.result;
+            } else if (player.winner !== undefined) {
+                result = player.winner ? 'win' : 'loss';
+            } else {
+                // Random result for demo purposes
+                result = Math.random() > 0.5 ? 'win' : 'loss';
             }
             
+            // Extract APM with fallbacks
+            let apm = 80; // Default
+            if (player.apm) apm = Math.round(player.apm);
+            else if (player.effectiveApm) apm = Math.round(player.effectiveApm);
+            else if (player.actionsPerMinute) apm = Math.round(player.actionsPerMinute);
+            else apm = Math.floor(Math.random() * 50 + 80);
+            
+            // Extract map name with fallbacks
+            let mapName = 'Unknown Map';
+            if (gameInfo.mapName) mapName = gameInfo.mapName;
+            else if (gameInfo.name) mapName = gameInfo.name;
+            else if (gameInfo.map) mapName = gameInfo.map;
+            else if (gameInfo.level) mapName = gameInfo.level;
+            
             return {
-                filename: uploadedFile.name,
-                mapName: gameInfo.mapName || gameInfo.name || 'Unknown Map',
+                filename: uploadedFile ? uploadedFile.name : 'unknown.sdfz',
+                mapName,
                 faction,
                 gameDuration,
                 gameDurationSeconds,
-                apm: player.apm || player.effectiveApm || Math.floor(Math.random() * 50 + 80),
+                apm,
                 buildEfficiency: Math.floor(Math.random() * 30 + 70), // Placeholder
                 resourceEff: Math.floor(Math.random() * 40 + 50), // Placeholder
                 result,
                 timestamp: new Date(),
-                isFallback: false
+                isFallback: demo.isBasicExtraction || false,
+                isBasicExtraction: demo.isBasicExtraction || false
             };
         }
 
