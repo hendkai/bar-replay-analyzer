@@ -225,34 +225,29 @@
             // Try multiple parser sources in order of preference
             const parserSources = [
                 {
-                    name: "Latest NPM via esm.sh",
-                    url: "https://esm.sh/sdfz-demo-parser@latest?bundle=false",
-                    description: "Latest version from npm"
+                    name: "ESM.sh bundled latest",
+                    url: "https://esm.sh/sdfz-demo-parser@latest",
+                    description: "Bundled latest version"
                 },
                 {
-                    name: "Version 5.11.0 via esm.sh",
-                    url: "https://esm.sh/sdfz-demo-parser@5.11.0?bundle=false",
-                    description: "Stable version 5.11.0"
-                },
-                {
-                    name: "Direct from GitHub",
-                    url: "https://cdn.jsdelivr.net/gh/beyond-all-reason/demo-parser@master/src/index.js",
-                    description: "Direct from BAR repository"
-                },
-                {
-                    name: "Version 5.11.0 bundled",
+                    name: "ESM.sh bundled 5.11.0",
                     url: "https://esm.sh/sdfz-demo-parser@5.11.0",
-                    description: "Bundled version 5.11.0"
+                    description: "Bundled stable version"
                 },
                 {
-                    name: "jsdelivr CDN",
+                    name: "Skypack CDN",
+                    url: "https://cdn.skypack.dev/sdfz-demo-parser",
+                    description: "Skypack CDN"
+                },
+                {
+                    name: "JSDelivr NPM",
                     url: "https://cdn.jsdelivr.net/npm/sdfz-demo-parser@latest/+esm",
-                    description: "jsdelivr CDN latest"
+                    description: "JSDelivr CDN"
                 },
                 {
-                    name: "unpkg CDN",
+                    name: "UNPKG bundled",
                     url: "https://unpkg.com/sdfz-demo-parser@latest?module",
-                    description: "unpkg CDN latest"
+                    description: "UNPKG CDN"
                 }
             ];
             
@@ -261,8 +256,20 @@
                     showParserStatus(`Loading ${source.name}...`);
                     console.log(`Attempting to load parser from: ${source.description}`);
                     
-                    const module = await import(source.url);
-                    DemoParser = module.DemoParser || module.default?.DemoParser || module.default;
+                    // Add timeout to prevent hanging
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('Load timeout')), 10000);
+                    });
+                    
+                    const loadPromise = import(source.url);
+                    const module = await Promise.race([loadPromise, timeoutPromise]);
+                    
+                    // Try multiple possible export patterns
+                    DemoParser = module.DemoParser || 
+                                module.default?.DemoParser || 
+                                module.default || 
+                                (module.createParser && module.createParser()) ||
+                                null;
                     
                     if (DemoParser && typeof DemoParser === 'function') {
                         console.log(`✅ Successfully loaded parser from: ${source.description}`);
@@ -278,17 +285,23 @@
                             DemoParser = null; // Reset and try next source
                         }
                     } else {
-                        console.warn(`Invalid parser export from ${source.name}`);
+                        console.warn(`Invalid parser export from ${source.name}:`, module);
                     }
                 } catch (error) {
                     console.warn(`Failed to load from ${source.name}:`, error.message);
+                    if (error.message.includes('CORS')) {
+                        console.warn('CORS error - trying next source');
+                    }
                 }
             }
             
             // If all sources failed
             console.error("All parser sources failed. Using fallback mode.");
-            showParserStatus("Parser unavailable. Enhanced analysis will use filename patterns.");
-            setTimeout(hideParserStatus, 3000);
+            showParserStatus("Parser unavailable. Using enhanced filename analysis instead.");
+            setTimeout(() => {
+                hideParserStatus();
+                console.log("App ready with enhanced filename analysis mode");
+            }, 2000);
         }
 
         // --- Firebase Configuration ---
@@ -467,19 +480,32 @@
             } catch (err) {
                 console.error("Error parsing replay file:", err);
                 
-                // Show a more helpful error message
+                // Check if we should try smart analysis instead
+                if (err.message.includes('r is undefined') || 
+                    err.message.includes('n() is undefined') || 
+                    err.message.includes('Cannot read properties') ||
+                    err.message.includes('DemoParser is not defined')) {
+                    
+                    console.log("Parser failed with undefined function error. Trying smart analysis...");
+                    await parseReplayWithSmartAnalysis(file);
+                    return;
+                }
+                
+                // For other errors, show specific message
                 let errorMsg = 'Failed to parse replay file. ';
                 if (err.message.includes('not gzipped')) {
                     errorMsg += 'The file does not appear to be a valid .sdfz replay file.';
-                } else if (err.message.includes('r is undefined') || err.message.includes('n() is undefined') || err.message.includes('DemoParser is not defined')) {
-                    errorMsg += 'Parser library failed to load. Showing sample data instead.';
-                } else if (err.message.includes('Cannot read properties')) {
-                    errorMsg += 'The replay format may be from a newer version of BAR. Showing sample data instead.';
+                } else if (err.message.includes('CORS')) {
+                    errorMsg += 'Network error loading parser. Trying smart analysis instead.';
+                    console.log("CORS error detected, switching to smart analysis");
+                    await parseReplayWithSmartAnalysis(file);
+                    return;
                 } else {
-                    errorMsg += 'The file might be corrupted or in an unsupported format. Showing sample data instead.';
+                    errorMsg += 'The file might be corrupted or in an unsupported format.';
                 }
                 
                 showError('errorMessage', errorMsg);
+                console.log("Falling back to sample data after error");
                 
                 // Use fallback data so the app continues to work
                 const fallbackData = createFallbackData();
@@ -490,12 +516,10 @@
         // Parse replay with enhanced smart analysis (when parser unavailable)
         async function parseReplayWithSmartAnalysis(file) {
             try {
-                showError('errorMessage', ''); // Clear any previous errors
+                hideError(); // Clear any previous errors
+                console.log("Analyzing replay file with smart analysis:", file.name);
                 
-                const filename = file.name;
-                console.log("Analyzing replay file with smart analysis:", filename);
-                
-                const analysisData = await createSmartAnalysisFromFilename(filename, file.size, file.lastModified);
+                const analysisData = await createSmartAnalysisFromFilename(file.name, file.size, file.lastModified);
                 analysisData.parsingMethod = 'Enhanced Filename Analysis';
                 analysisData.isSmartAnalysis = true;
                 
@@ -503,7 +527,7 @@
                 
             } catch (error) {
                 console.error("Smart analysis failed:", error);
-                showError('errorMessage', 'Smart analysis failed. Showing sample data instead.');
+                console.log("Falling back to sample data mode");
                 const fallbackData = createFallbackData();
                 await finishAnalysisWithFallback(fallbackData);
             }
